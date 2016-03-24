@@ -1,0 +1,64 @@
+//*********************************************************************************************
+	            //* Create the S3 object
+	        	//* Format:	/lsBucketName/rootBucketName/
+	        	//* Example: /livestrong.org/rs/images-email/10.7.13_tls-newsletter-share-2.png
+	            //*********************************************************************************************
+	        	
+	        	// Create a bucket to store an object in
+	        	assetBucket = s3Service.createBucket(assetBucketName);
+	         
+	        	
+	        	//String sourceFile = onlinePath + "/" + eb.getBEID() + "/" + eb.getDeliveryFormatID() + "/" + eb.getISBN() + "." + eb.getDeliveryFormatAlphaCode().toLowerCase();
+	        	String sourceFileName = onlinePath + "/" + eb.getBEID() + "/" + eb.getDeliveryFormatID() + "/" + eb.getBookFileName();
+	        	
+	            
+	            // strip off the beid and other isbn from the source file name so 
+	            // we have just isbn.delivery_format_alpha_code
+	            String sourceFileNameCanonical = eb.getISBN() + "." + eb.getDeliveryFormatAlphaCode().toLowerCase();
+	            
+	        	if (debug) {
+	        		System.out.println("   beidStr prefix: " + beidStr.substring(0,3));
+	        		System.out.println("   Source file name path: " + sourceFileName);
+	        		System.out.println("   Source file name - renamed: " + sourceFileNameCanonical);
+	        	}
+
+	        	try {
+      				logger.write("\tbeidStr prefix: " + beidStr.substring(0,3));
+      				logger.write("\tSource file name path: " + sourceFileName);
+      				logger.write("\tSource file name - renamed: " + sourceFileNameCanonical);
+          	    } catch (IOException e) {
+          	    }
+	        	
+	        	//*********************************************************************************
+	        	// Create an S3Object based on a file, with Content-Length set automatically and 
+	            // Content-Type set based on the file's extension
+	        	//*********************************************************************************
+	            File fileData = new File(assetPath);
+	            
+	            if (fileData.exists()) {	
+	            	
+	            	S3Object fileObject = new S3Object(lsBucket,fileData);
+		        	fileObject.setContentLength(fileData.length());
+		        	
+		            // put the object into the bucket
+		            s3Service.putObject(lsBucket, fileObject);
+
+		            // add upload date and time metadata
+		            fileObject.addMetadata(S3Object.METADATA_HEADER_LAST_MODIFIED_DATE,cal.getTime());		        	
+		        	
+		            System.out.println();
+			        System.out.println("   --------------- Copy COMPLETE for " + assetPath);
+			        System.out.println();
+			        
+			        try {
+	      				logger.write("\n\t--------------- Copy COMPLETE for " + assetPath);
+	          	    } catch (IOException e) {
+	          	    }
+	          	    
+	            }
+	            else {
+
+	            	System.err.println("Unable to retrieve file data for " + assetPath);
+	                System.exit(1);
+	            	
+	            }        
