@@ -45,10 +45,8 @@ public class Mover {
     private static S3Service s3Service				= null;
     private static AWSCredentials awsCredentials	= null;
     private static S3Bucket lsBucket				= null;
-    private static S3Bucket rootBucket				= null;
     private static S3Bucket assetBucket				= null;
     private static String lsBucketName				= null;
-    private static String rootObjectName			= null;
     private static String sourceDirStr				= null;
     
     
@@ -69,22 +67,20 @@ public class Mover {
     	//*********************************************************************************************
         //* Get Command Line Arguments - overwrites the properties file value, if any
         //*********************************************************************************************   	
-    	String usage = "Usage:\n" + "java -jar s3mover.jar [-i INPUT_MANIFEST] [-r ROOT_BUCKET_NAME] [-s SOURCE_ASSET_DIRECTORY] [-d] (DEBUG optional)\n";
-    	String example = "Example:\n" + "java -jar s3mover.jar -i /tmp/mover.csv -r rs -s /tmp/images\n" +
-    	"java -jar s3mover.jar -i /tmp/mover.txt -r online -s /tmp/images -d\n";
+    	String usage = "Usage:\n" + "java -jar s3mover.jar [-i INPUT_MANIFEST] [-s SOURCE_ASSET_DIRECTORY] [-d] (DEBUG optional)\n";
+    	String example = "Example:\n" + "java -jar s3mover.jar -i /tmp/mover.csv -s /tmp/images\n" +
+    	"java -jar s3mover.jar -i /tmp/mover.txt -s /tmp/images -d\n";
     	
     	// get system properties
     	sysProps = System.getProperties();
 
         // get command line arguments
-    	if (args.length >= 6) {
+    	if (args.length >= 4) {
     		
 	    	for (int optind = 0; optind < args.length; optind++) {
 	    	    
 	    		if (args[optind].equals("-i")) {
 	    			inputFilePath = args[++optind];
-				} else if (args[optind].equals("-r")) {
-	    			rootObjectName = args[++optind];
 				} else if (args[optind].equals("-s")) {
 	    			sourceDirStr = args[++optind];
 				} else if (args[optind].equals("-d")) {
@@ -124,7 +120,6 @@ public class Mover {
     		System.out.println("awsAccessKey: " + awsAccessKey);
     		System.out.println("awsSecretKey: " + awsSecretKey);
     		System.out.println("lsBucket: " + lsBucketName);
-    		System.out.println("rootObjectName: " + rootObjectName);
     		System.out.println("sourceDirStr: " + sourceDirStr);
     	}
     	
@@ -238,23 +233,26 @@ public class Mover {
 		    //*********************************************************************************************
 	        //* Move each asset to S3
 	        //*********************************************************************************************
-		    String objectName = rootObjectName;
-		    
 		    while (assetItr.hasNext()) {
 	        	
 	        	// get next path 
 	        	String path = (String) assetItr.next();
 	        	
-	        	// build full path
+	        	// build full path to file
 	        	String assetPath = sourceDirStr + "/" + path;
 	        	
 	        	// create full bucket name base on path parts
-	        	String [] parts = null;
+	        	String [] parts;
 	        	String delimeter = "/";
 	        	parts = path.split(delimeter);
 	        	
+	        	String objectName = "";
 	        	for (String part: parts) {
-	        		objectName += "/" + part.replace(" ","+");
+	        		if (objectName.equals("")) {
+	        			objectName = part.replace(" ","+");
+	        		} else{
+	        			objectName += "/" + part.replace(" ","+");
+	        		}	
 	        	}
 	        	
 	        	if (debug) {
